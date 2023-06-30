@@ -1,26 +1,60 @@
-import React from 'react';
-import logo from './logo.svg';
-import './App.css';
+import React, { useState, useReducer } from 'react'
+import axios from 'axios'
 
-function App() {
-  return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.tsx</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
-    </div>
-  );
+const initialState = {
+  error: null,
+  greeting: null,
 }
 
-export default App;
+function greetingReducer(state: any, action: any) {
+  switch (action.type) {
+    case 'SUCCESS': {
+      return {
+        error: null,
+        greeting: action.greeting,
+      }
+    }
+    case 'ERROR': {
+      return {
+        error: action.error,
+        greeting: null,
+      }
+    }
+    default: {
+      return state
+    }
+  }
+}
+
+export default function App({ url }: { url: string }) {
+  const [{ error, greeting }, dispatch] = useReducer(
+    greetingReducer,
+    initialState,
+  )
+  const [buttonClicked, setButtonClicked] = useState(false)
+
+  const fetchGreeting = async (url: string) =>
+    axios
+      .get(url)
+      .then(response => {
+        const { data } = response
+        const { greeting } = data;
+        dispatch({ type: 'SUCCESS', greeting })
+        setButtonClicked(true)
+      })
+      .catch(error => {
+        dispatch({ type: 'ERROR', error })
+      })
+
+  const buttonText = buttonClicked ? 'Ok' : 'Load Greeting'
+
+  return (
+    <div>
+      <button onClick={() => fetchGreeting(url)} disabled={buttonClicked}>
+        {buttonText}
+      </button>
+      {greeting && <h1>{greeting}</h1>}
+      {error && <p role="alert">Oops, failed to fetch!</p>}
+    </div>
+  )
+}
