@@ -1,43 +1,55 @@
-import React from 'react'
 import { rest } from 'msw'
 import { setupServer } from 'msw/node'
 import { render, fireEvent, screen } from '@testing-library/react'
 import Fetch from './App';
+import axios from 'axios';
+import MockAdapter from 'axios-mock-adapter';
 
-const server = setupServer(
-  rest.get('/greeting', (req, res, ctx) => {
-    return res(ctx.json({ greeting: 'hello there' }))
-  }),
-)
+// const server = setupServer(
+//   rest.get('/greeting', (req, res, ctx) => {
+//     return res(ctx.json({ greeting: 'hello there' }))
+//   }),
+// )
 
-beforeAll(() => server.listen())
-afterEach(() => server.resetHandlers())
-afterAll(() => server.close())
+// beforeAll(() => server.listen())
+// afterEach(() => server.resetHandlers())
+// afterAll(() => server.close())
 
-test('loads and displays greeting', async () => {
-  render(<Fetch url="/greeting" />)
+describe('Fetch', () => {
+  var mock = new MockAdapter(axios);
 
-  fireEvent.click(screen.getByText('Load Greeting'))
+  beforeEach(() => {
+    mock.reset();
+  });
 
-  await screen.findByRole('heading')
 
-  expect(screen.getByRole('heading')).toHaveTextContent('hello there')
-  expect(screen.getByRole('button')).toBeDisabled()
-})
+  test('handles server error', async () => {
+    // server.use(
+    //   rest.get('/greeting', (req, res, ctx) => {
+    //     return res(ctx.status(500))
+    //   }),
+    // )
+    mock.onGet('/greeting').reply(500, null);
+    
+    render(<Fetch url="/greeting" />)
 
-// test('handles server error', async () => {
-//   server.use(
-//     rest.get('/greeting', (req, res, ctx) => {
-//       return res(ctx.status(500))
-//     }),
-//   )
+    fireEvent.click(screen.getByText('Load Greeting'))
 
-//   render(<Fetch url="/greeting" />)
+    await screen.findByRole('alert')
 
-//   fireEvent.click(screen.getByText('Load Greeting'))
+    expect(screen.getByRole('alert')).toHaveTextContent('Oops, failed to fetch!')
+    expect(screen.getByRole('button')).not.toBeDisabled()
+  });
 
-//   await screen.findByRole('alert')
+  test('loads and displays greeting', async () => {
+    render(<Fetch url="/greeting" />)
+    // { data: { greeting: 'hello there' } }
+    mock.onGet('/greeting').reply(200, { greeting: 'hello there' });
+    fireEvent.click(screen.getByText('Load Greeting'));
 
-//   expect(screen.getByRole('alert')).toHaveTextContent('Oops, failed to fetch!')
-//   expect(screen.getByRole('button')).not.toBeDisabled()
-// })
+    await screen.findByRole('heading')
+
+    expect(screen.getByRole('heading')).toHaveTextContent('hello there')
+    expect(screen.getByRole('button')).toBeDisabled()
+  })
+});

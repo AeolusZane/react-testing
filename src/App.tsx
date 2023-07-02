@@ -1,5 +1,6 @@
-import React, { useState, useReducer } from 'react'
-import axios from 'axios'
+import { useState, useReducer, useEffect } from 'react'
+import axios from 'axios';
+import Div from './Div';
 
 const initialState = {
   error: null,
@@ -31,11 +32,18 @@ export default function App({ url }: { url: string }) {
     greetingReducer,
     initialState,
   )
+
+  /**
+   * 为了覆盖而写代码没必要哈
+   */
+  useEffect(() => {
+    dispatch('default');
+  }, []);
+
   const [buttonClicked, setButtonClicked] = useState(false)
 
   const fetchGreeting = async (url: string) =>
-    axios
-      .get(url)
+    axios.get(url)
       .then(response => {
         const { data } = response
         const { greeting } = data;
@@ -49,12 +57,12 @@ export default function App({ url }: { url: string }) {
   const buttonText = buttonClicked ? 'Ok' : 'Load Greeting'
 
   return (
-    <div>
+    <Div>
       <button onClick={() => fetchGreeting(url)} disabled={buttonClicked}>
         {buttonText}
       </button>
       {greeting && <h1>{greeting}</h1>}
       {error && <p role="alert">Oops, failed to fetch!</p>}
-    </div>
+    </Div>
   )
 }
